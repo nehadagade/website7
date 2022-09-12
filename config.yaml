@@ -1,16 +1,16 @@
 baseURL: https://nehadagade.netlify.app/
 languageCode: en-us
-title: Forty
+title: Neha
 theme: forty
 googleAnalytics: ''
 disqusShortname: ''
 params:
   banner:
     buttonText: Get Started
-    subtitle: |-
-      A RESPONSIVE SITE TEMPLATE DESIGNED BY HTML5 UP
-      AND RELEASED UNDER THE CREATIVE COMMONS.
-    title: Hi, my name is Forty
+    # subtitle: |-
+    #   A RESPONSIVE SITE TEMPLATE DESIGNED BY HTML5 UP
+    #   AND RELEASED UNDER THE CREATIVE COMMONS.
+    title: Hi, my name is Neha
   blog: {}
   contact:
     address:
@@ -42,9 +42,9 @@ params:
         text: 'Design: '
         url: https://www.html5up.net
     social:
-      - icon: fa-twitter
-        label: Twitter
-        url: https://www.twitter.com
+      # - icon: fa-twitter
+      #   label: Twitter
+      #   url: https://www.twitter.com
       - icon: fa-facebook
         label: Facebook
         url: https://www.facebook.com
@@ -56,7 +56,7 @@ params:
         url: https://www.github.com
       - icon: fa-linkedin
         label: LinkedIn
-        url: https://www.linkedin.com
+        url: https://www.linkedin.com/in/neha-dagade/
   image: ''
   name: Your name
   navigation:

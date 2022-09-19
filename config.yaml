@@ -9,7 +9,7 @@ params:
     buttonText: Get to know me!
     
     subtitle: |-
-      I'm currently building a whole new life in a whole new city whilst pursuing my Masters in Analytics and Management at London Business School.
+      I'm currently pursuing my Masters in Analytics and Management at London Business School.
      
      #   A RESPONSIVE SITE TEMPLATE DESIGNED BY HTML5 UP
      #   AND RELEASED UNDER THE CREATIVE COMMONS.
@@ -111,7 +111,7 @@ params:
   two:
     buttonText: Get Started
     enable: yes
-    subtitle: "Curious, passionate and determined. A stickler for perfection and professionalism who thrives on challenge. Born in India and raised in Malaysia. Econs and Stats undergrad, presently an LBS MAM'23 student keen on exploring opportunities in finance, tech and insurance.
+    subtitle: "Curious, passionate and determined. A stickler for perfection and professionalism who thrives on challenge. Born in India and raised in Malaysia. Econs and Stats undergrad, presently a LBS MAM'23 student keen on exploring opportunities in finance, tech and insurance.
       \r\nPassionate about analytics and problem solving.  \r\n    Food, fashion and travel lover. Looking to meet new people, collaborate, inspire, explore and make lifelong connections."
     title: A quick Intro 
     url: blogs

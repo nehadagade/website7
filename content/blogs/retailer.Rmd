@@ -605,7 +605,7 @@ huxreg(model1, model2,
   set_caption('Comparison of models')
 ```
 
-INFERENECE 1
+INFERENCE 1
 
 > On average, change in one unit of temperature is associated with an increase of weekly sales by \$72.9. Whereas, the change in fuel price by \$1 is associated with decrease in weekly sales of \$665.
 

@@ -1,0 +1,615 @@
+---
+title: "Analysis of weekly sales of a US Retailer"
+date: "`r Sys.Date()`"
+description: " "
+draft: no
+image: retail sales.jpeg
+keywords: ''
+slug: retailer
+categories:
+- ''
+- ''
+---
+
+```{r, setup, echo=FALSE}
+knitr::opts_chunk$set(
+  message = FALSE, 
+  warning = FALSE, 
+  tidy=FALSE,     # display code as typed
+  size="small")   # slightly smaller font for code
+options(digits = 3)
+
+# default figure size
+knitr::opts_chunk$set(
+  fig.width=6.75, 
+  fig.height=6.75,
+  fig.align = "center"
+)
+```
+
+```{r load-libraries, echo=FALSE}
+library(tidyverse)  # Load ggplot2, dplyr, and all the other tidyverse packages
+library(mosaic)
+library(ggthemes)
+library(GGally)
+library(readxl)
+library(here)
+library(skimr)
+library(janitor)
+library(broom)
+library(performance)
+library(car)
+library(lubridate)
+library(moderndive)
+library(huxtable)
+library(ggpubr)
+```
+
+# Loading data
+
+```{r, loading_data}
+#Loading sales from the downloaded file
+sales <- vroom::vroom(here::here("data","sales.csv")) %>% 
+  janitor::clean_names()
+
+
+#Loading details from the downloaded file
+details <- vroom::vroom(here::here("data","details.csv")) %>% 
+  janitor::clean_names()
+
+
+#Loading stores from the downloaded file
+stores <- vroom::vroom(here::here("data","stores.csv")) %>% 
+  janitor::clean_names()
+
+```
+
+# Merging datasets
+
+```{r, merging & inspecting}
+
+#Merging sales and details
+sales_details <- left_join(sales, details, by = c("store" = "store", "date" = "date", "is_holiday" = "is_holiday"))
+
+# Merging sales_details and stores
+sales1 <- left_join(sales_details, stores, by = "store")
+
+glimpse(sales1) 
+skim(sales1) #check for NAs - exist in mark_down variables
+
+# treating NAs in markdowns as 0 due to the interpretation of 0 promotional markdown
+sales1 <- sales1 %>%
+  mutate(mark_down1 = ifelse(is.na(mark_down1),0,mark_down1),
+         mark_down2 = ifelse(is.na(mark_down2),0,mark_down2),
+         mark_down3 = ifelse(is.na(mark_down3),0,mark_down3),
+         mark_down4 = ifelse(is.na(mark_down4),0,mark_down4),
+         mark_down5 = ifelse(is.na(mark_down5),0,mark_down5)) %>%
+  mutate(date = dmy(date))
+
+# negative weekly_sales values
+check <- sales1 %>%
+	filter(weekly_sales < 0) # check for negatives - 1200+
+
+# There are some negative weekly sales observations. We have proceeded to interpret them as negative weekly net sales, indicating that these stores made losses in those weeks. 
+
+
+```
+
+# Exploratory Data Analysis
+
+## Inspecting dataset
+
+```{r inspect}
+
+glimpse(sales1) 
+skim(sales1) #check for NAs 
+# we found that weekly_sales, all of the markdowns (1 to 5), size, unemployment, cpi, temperature and fuel_price 
+
+```
+
+
+## Summary details:
+
+"Sales1" (created by merging sales, details and stores) contains 16 variables, only four of which are categorical: type, is_holiday, store, dept. The data contains 13 numerical variables, 1 chatacter variable, 1 date and 1 logical variable. "is_holiday" is specified as the logical variable.
+
+The NAs from the markdown files have been replaced with 0s. 
+
+Within "sales1", the variable "weekly_sales" there are some values which are negative. Whereas this should not be possible considering a strict definition of the term sales/revenues, whe interpret the variable as comprising also of depreciated products/lost merchandise. As such, we will keep the negative values as well.
+
+## Important Variables
+
+
+**weekly_sales**: a density plot shows that most stores have a similar amount of weekly sales, with the density plot presenting a stark peak and being skewed to the right.The median measures around 7667 with the maximum amount being 671916. On a histogram, this value and other like it appear as outliers. We also found clear peaks in sales in the period of late December and late November of both 2011 and 2012. 
+```{r weekly_sales}
+favstats(sales1$weekly_sales)
+
+sales1 %>%
+  ggplot(aes(x= weekly_sales)) +
+  geom_histogram(binwidth=5000) +
+  scale_x_continuous(labels = scales::comma, limits = c(0,200000)) +
+  scale_y_continuous(labels = scales::comma) +
+  labs(title = "Histogram of Right Skewed distribution of weekly_sales variable",x="Weekly Sales",y=NULL) +
+  theme_minimal()
+
+```
+
+
+
+
+**all of the markdowns (1 to 5)**
+The various markdown types represent the kinds of discounts which can be brought on products. We analysed these together to try and see which type seems to be more successful using boxplots. At a glance, it is clear that markdown_1 and markdown_5's distributions are more skewed to the right, whereas the other markdowns are skewed very little. Furthermore, markdown_3 generates relatively few outliers compared to the other ones. 
+
+```{r markdowns}
+
+m1 <- sales1 %>%
+  ggplot(aes(x= mark_down1)) +
+  geom_boxplot() +
+  scale_x_continuous(labels = scales::comma, limits = c(-10000,112000)) +
+  scale_y_continuous(labels = scales::comma) +
+  labs(x="Markdown 1",y=NULL) +
+  theme_minimal() +
+  theme(axis.text.y = element_blank())
+
+m2 <- sales1 %>%
+  ggplot(aes(x= mark_down2)) +
+  geom_boxplot() +
+  scale_x_continuous(labels = scales::comma, limits = c(-10000,112000)) +
+  scale_y_continuous(labels = scales::comma) +
+  labs(x="Markdown 2",y=NULL) +
+  theme_minimal() +
+  theme(axis.text.y = element_blank())
+
+m3 <- sales1 %>%
+  ggplot(aes(x= mark_down3)) +
+  geom_boxplot() +
+  scale_x_continuous(labels = scales::comma, limits = c(-10000,112000)) +
+  scale_y_continuous(labels = scales::comma) +
+  labs(x="Markdown 3",y=NULL) +
+  theme_minimal() +
+  theme(axis.text.y = element_blank())
+
+m4 <- sales1 %>%
+  ggplot(aes(x= mark_down4)) +
+  geom_boxplot() +
+  scale_x_continuous(labels = scales::comma, limits = c(-10000,112000)) +
+  scale_y_continuous(labels = scales::comma) +
+  labs(x="Markdown 4",y=NULL) +
+  theme_minimal() +
+  theme(axis.text.y = element_blank())
+
+m5 <- sales1 %>%
+  ggplot(aes(x= mark_down5)) +
+  geom_boxplot() +
+  scale_x_continuous(labels = scales::comma, limits = c(-10000,112000)) +
+  scale_y_continuous(labels = scales::comma) +
+  labs(x="Markdown 5",y=NULL) +
+  theme_minimal() +
+  theme(axis.text.y = element_blank())
+
+ggarrange(m1,m2,m3,m4,m5,nrow=5)
+```
+
+## Correlation Exploration between Variables
+To Explore the correlation between the various variables, we analysed the correlations between weekly_sales, temperature, fuel_price, markdown_1, markdown_2, markdown_3, markdown_4, markdown_5, cpi, unemployment and size. 
+There is quite a high correlation amongst the markdowns, with 1 and 3 presentin an correlation factor of 0.83, but it is insignificant as it doesn't make much sense.  
+
+```{r correlation between varaibles}
+
+cor(sales1[,c(1,2,4:14,16)])
+
+```
+## Q1
+
+```{r weeks difference}
+#number of distinct date, i.e weeks of data in details table
+a <- details %>% summarise(n_distinct(date))
+
+#number of distinct date, i.e weeks of data in sales table
+b <- sales %>% summarise(n_distinct(date))
+
+#Difference between the number of weeks in details & sales table
+a-b
+
+
+```
+In details.csv there are 39 more weeks of data compared to sales.csv
+
+## Q2
+Before answering, we had to reformat the dates in the sales dataset. We then proceeded to analyse how many days and weeks have passed between the first day of sales and the last one. We found out that 142 weeks had passed. This amount is consistent with the number of years in the data set and previous analyses. 
+
+```{r date range}
+
+date_min <- min(dmy(sales$date))
+
+date_max <- max(dmy(sales$date))
+
+#Range of date in sales data in days
+as.numeric(difftime(date_max, date_min))/7
+
+```
+
+
+
+## Q3
+The maximum department count per store is 79, with stores 15, 13 and 19 having this amount of departments in some cases. 
+```{r number of stores}
+
+sales1 %>%
+  group_by(store) %>%
+  summarise(dept_count = n_distinct(dept)) %>%
+  arrange(desc(dept_count))
+
+```
+
+## Q4
+
+From Question 3, It is noticeable how most stores have a similar amount of maximum departments, except for those stores with codes 30,33,36, 38, 37, 42 and 43. These stores have less departments as they measure in their sixties. 
+```{r types of stores}
+#Look at mean, median & standard deviation of sales across stores
+sales1 %>%
+  group_by(date,store) %>%
+  summarise(base_weekly_sales=sum(weekly_sales)) %>%
+  group_by(store) %>%
+  summarise(median_weekly_sales=median(base_weekly_sales),mean_weekly_sales=mean(base_weekly_sales),sd_weekly_sales=sd(base_weekly_sales))
+  
+```
+
+## Q5
+Store number 4 has the highest number of sales in this timeframe.
+
+```{r most sales}
+#Filtering for the mentioned dates, grouping by store and ordering based on sum of sales
+sales1 %>%
+  filter(between(date,as.Date('2011-11-07'),as.Date('2011-12-30'))) %>%
+  group_by(store) %>%
+  summarise(sum_sales = sum(weekly_sales)) %>%
+  arrange(desc(sum_sales))
+
+```
+
+## Q6
+
+Store number 20 has the highest level of weekly median sales in this timeframe.
+```{r store sales distribution}
+
+median_weekly <- sales1 %>%
+  group_by(store) %>%
+  summarise(median_weekly_sales=median(weekly_sales))
+
+median_weekly %>%
+  ggplot(aes(x=median_weekly_sales,y=fct_reorder(factor(store),median_weekly_sales))) +
+  geom_col() +
+  labs(title = "Store sales ranked by weekly median sales", x = "Weekly median sales",y = "Store") +
+  theme_bw()
+
+```
+
+## Q7
+The variable which has the highest correlation with weekly_sales is the size variable, which represents the size of the store.
+```{r correlations}
+
+details2<-sales1 %>% 
+  select(-c(dept))
+
+cor(details2[,c(4:13,1,15)])
+```
+
+## Q8
+
+Stores which have higher mean sales out of the holidays include 30, 36, 37, 38, 44.
+```{r holiday anomaly mean}
+
+#Finding weekly means by store divided by is_holiday variable, compare to find which stores have anomalous holiday sales lower than normal sales
+anomaly_mean <- sales1 %>%
+  group_by(date,store,is_holiday) %>%
+  summarise(base_weekly_sales=sum(weekly_sales)) %>%
+  group_by(store,is_holiday) %>%
+  summarise(mean_weekly_sales = mean(base_weekly_sales)) %>%
+  pivot_wider(names_from = "is_holiday",
+              values_from = "mean_weekly_sales")
+
+colnames(anomaly_mean) <- c("store","noholiday","yesholiday")
+  
+anomaly_mean %>%
+    group_by(store) %>%
+    summarise(anomaly_flag = ifelse(noholiday>yesholiday,1,0)) %>%
+    arrange(desc(anomaly_flag))
+
+
+```
+
+
+
+
+## Q9
+Stores which have higher median sales out of the holidays include 25, 32, 36, 38.
+```{r holiday anomaly median}
+
+#Finding weekly medians by store divided by is_holiday variable, compare to find which stores have anomalous holiday sales lower than normal sales
+anomaly_median <- sales1 %>%
+  group_by(date,store,is_holiday) %>%
+  summarise(base_weekly_sales=sum(weekly_sales)) %>%
+  group_by(store,is_holiday) %>%
+  summarise(median_weekly_sales = median(base_weekly_sales)) %>%
+  pivot_wider(names_from = "is_holiday",
+              values_from = "median_weekly_sales")
+
+colnames(anomaly_median) <- c("store","noholiday","yesholiday")
+  
+  
+anomaly_median %>%
+    group_by(store) %>%
+    summarise(anomaly_flag = ifelse(noholiday>yesholiday,1,0)) %>%
+    arrange(desc(anomaly_flag))
+
+```
+
+
+# Inferential Statistics
+
+## Average weekly sales in holidays
+
+Sales are expected to spike during holiday periods as the demand for gifts increase. There are 4 major holiday periods in the US: the Super Bowl in February, Labour Day in September, Thanksgiving in November, and Christmas in December. Between February 2010 and October 2012, each of the holidays have generated around a hundred million dollars of net sales. In this dataset, the Thanksgiving festival in November generates the highest average weekly sales of 22k out of all four holidays.
+
+```{r, isholiday}
+# Use sales & details dataset holiday
+sales_holiday <- sales1 %>%
+  filter(is_holiday == TRUE) %>% # filter for holiday periods only
+  mutate(month = strftime(date, "%m")) %>% # create new variable as month component of date
+  group_by(month) %>% # group by month to show which holiday it is, of all sales of all stores
+  summarise(average_sales = mean(weekly_sales), sum_sales = sum(weekly_sales)) %>% # summarise by holiday 
+  arrange(desc(average_sales))
+
+# Display summary table
+sales_holiday
+  
+```
+
+Labour day, on average, has just above 1.8k fewer weekly net sales relative to other major holiday periods. 
+
+```{r, holiday_vs_labour_day}
+sales_holiday_vs_labour <- sales1 %>%
+  filter(is_holiday == TRUE) %>% # filter for holiday periods only
+  mutate(month = strftime(date, "%m")) %>% # extract month component of date as new variable
+  mutate(month = as.numeric(month)) %>% # change class of month to numeric
+  group_by(month) %>% # group by holiday (which is by month)
+  summarise(average_sales = mean(weekly_sales), sum_sales = sum(weekly_sales)) %>% # summarise sales by holiday 
+  mutate(is_labour_day = ifelse(month == 9, TRUE, FALSE)) %>% # generate logical variable to separate holidays - labour day and others
+  group_by(is_labour_day) %>% # calculate summary statistics by holiday average sales
+  summarise(average_holiday = mean(average_sales))
+
+# Display summary table
+sales_holiday_vs_labour
+
+# Calculate difference in average weekly sales
+15995 - 17834
+
+```
+
+## Difference in means of weekly net sales between holiday and non-holiday periods
+### With Thanksgiving
+
+One question that may be asked is whether holiday weekly net sales differ statistically significantly to non-holiday weekly net sales. Graphically, the 95% confidence intervals do not overlap at all, and that holiday average weekly net sales significantly differ from those in non-holiday periods. Running a t-test with the null hypothesis of average weekly net sales is the same between holiday and non-holiday periods, and alternative hypothesis of average weekly net sales differ between the two periods. The t test returned a very low p-value, suggesting that there is enough evidence to reject the null hypothesis of same mean weekly net sales between holiday and non-holiday periods.
+
+```{r, holiday_vs_non_holiday}
+t_test_holiday <- sales1 %>%
+  group_by(is_holiday) %>%
+  summarise(mean = mean(weekly_sales),
+            count = n(),
+            t = qt(0.975, count - 1),
+            sd = sd(weekly_sales),
+            se = sd/sqrt(count),
+            margin = t * se,
+            l_ci = mean - margin,
+            h_ci = mean + margin)
+
+ggplot(data = t_test_holiday, aes(x = mean, y = is_holiday, colour = is_holiday)) +
+  geom_point() +
+  geom_errorbarh(aes(xmax = h_ci, xmin = l_ci, height = .1)) +
+  labs(title = "95% Confidence Interval comparison between holiday and non-holiday periods",
+       x = "Mean Weekly Sales",
+       y = "Holiday Period") +
+  theme_bw() +
+  theme (legend.position = "none") +
+  NULL
+```
+
+```{r, t-test_holiday}
+t.test(weekly_sales ~ is_holiday,
+       alternative = "two.sided",
+       conf.level = 0.95,
+       data = sales1)
+
+# p-value = 3e-12
+```
+
+
+### Without Thanksgiving
+
+Thanksgiving, as previously determined, has the highest weekly net sales. Keeping in mind that this holiday period may be an outlier, an analysis of the difference between holiday and non-holiday weekly sales excluding thanksgiving is due.
+
+```{r, thanksgiving_special}
+# Excluding thanksgiving
+sales_thanksgiving <- sales1 %>%
+  mutate(month = strftime(date, "%m")) %>% # extract month component of date as new variable
+  mutate(month = as.numeric(month)) %>% # change class of month to numeric
+  mutate(is_thanksgiving = ifelse(is_holiday == TRUE & month == 11, TRUE, FALSE)) %>% # generate thanksgiving indicator
+  filter(is_thanksgiving == FALSE) # exclude thanksgiving
+
+```
+
+Firstly, confidence intervals of these subgroups are compared. It seems like the 95% confidence interval of non-holiday periods is completely contained within those of the holiday periods.
+
+```{r, thanksgiving_ci}
+t_test_holiday <- sales_thanksgiving %>%
+  group_by(is_holiday) %>%
+  summarise(mean = mean(weekly_sales),
+            count = n(),
+            t = qt(0.975, count - 1),
+            sd = sd(weekly_sales),
+            se = sd/sqrt(count),
+            margin = t * se,
+            l_ci = mean - margin,
+            h_ci = mean + margin)
+
+# ggplot
+ggplot(data = t_test_holiday, aes(x = mean, y = is_holiday, colour = is_holiday)) +
+  geom_point() +
+  geom_errorbarh(aes(xmax = h_ci, xmin = l_ci, height = .1)) +
+  labs(title = "95% Confidence Interval comparison between holiday and non-holiday periods",
+       x = "Mean Weekly Sales",
+       y = "Holiday Period") +
+  theme_bw() +
+  theme (legend.position = "none") +
+  NULL
+```
+
+Running t-test of difference in means of weekly net sales returned not enough evidence to reject the null hypothesis, and that holiday average weekly sales do not differ at 95% from non-holiday periods when thanksgiving is excluded. We can safely conclude our analysis of holiday vs non-holiday weekly net sales, concluding that Thanksgiving is indeed an outlier of the holiday periods with significantly higher weekly sales relative to both other holiday and non-holiday periods.
+
+```{r, t-test_formula}
+t.test(weekly_sales ~ is_holiday,
+       alternative = "two.sided",
+       conf.level = 0.95,
+       data = sales_thanksgiving)
+
+# p-value = 0.3
+```
+
+
+
+# Regression Models
+
+The purpose of this exercise is to explain the variability of the weekly sales in the retailer's stores.
+
+## Running regression with all variables
+
+In the first attempt to explain weekly sales, we are using all available variables in their current format.
+
+```{r model1}
+model1 <- lm(weekly_sales ~ ., data = sales1)
+
+get_regression_table(model1)
+
+get_regression_summaries(model1)
+
+mosaic::msummary(model1)
+
+```
+
+When regression is run on dataset as given, then our model explains only 9% of variability of the data. Similarly, 'date' variable, even though significant, is not interpretable. Therefore, we decided to split this variable into year, and seasons.
+
+```{r changing data format}
+
+sales_reg <- sales1 %>% 
+  mutate(year= factor(year(date)),
+         month = month(date),
+         season_name = case_when(
+           month %in%  c("12", "1", "2")  ~ "Winter",
+           month %in%  c("3", "4", "5")  ~ "Spring",
+           month %in%  c("6", "7", "8")  ~ "Summer",
+           month %in%  c("9", "10", "11")  ~ "Autumn",
+    ),
+    season_name = factor(season_name, 
+                         levels = c("Winter", "Spring", "Summer", "Autumn")))
+
+```
+
+
+## Running model 2
+
+We run the next model after removing the date and month variables and keeping seasons and year as a factor instead.
+
+```{r model2}
+model2 <- lm(weekly_sales~ . - date - month, data = sales_reg)
+
+get_regression_table(model2)
+
+get_regression_summaries(model2)
+
+mosaic::msummary(model2)
+```
+
+We create a variable for each of the holiday weeks (Christmas, Thanksgiving, Labour day and Superbowl) to compare weekly sales for diffreent holidays.
+
+```{r adding_holiday_variables}
+
+sales_reg<-sales_reg %>% 
+  mutate(superbowl = ifelse(month == "2" & is_holiday =="TRUE", TRUE, FALSE),
+         christmas = ifelse(month == "12" & is_holiday =="TRUE", TRUE, FALSE),
+         labor = ifelse(month == "9" & is_holiday =="TRUE", TRUE, FALSE),
+         thanksgiving = ifelse(month == "11" & is_holiday =="TRUE", TRUE, FALSE))
+         
+```
+
+Additionally, variables 'store' and 'dept' are interpreted as numerical variables, when in fact they are factors. Therefore, this will be accounted for in our next model.
+
+
+## Running model 3
+
+```{r model3}
+model3 <- lm(weekly_sales ~ factor(dept) + factor(store) + temperature + cpi + unemployment + type + size  + season_name + fuel_price + superbowl + christmas + labor + thanksgiving + mark_down1  + mark_down2  + mark_down3  + mark_down4  + mark_down5, data = sales_reg)
+
+get_regression_table(model3)
+mosaic::msummary(model3)
+# vif(model3) problem of collinearity arise
+
+```
+
+There is problem of collinearity between variables in the model. Hence we remove store as a variable. By doing this,although we arrive at a model with less model explainability, the problem of collinearity is resolved.
+
+## Running final model
+
+```{r model_final}
+model_final <- lm(weekly_sales ~ factor(dept)  + temperature + cpi + unemployment + type + size  + season_name + fuel_price + superbowl + christmas + labor + thanksgiving + mark_down1  + mark_down2  + mark_down3  + mark_down4  + mark_down5, data = sales_reg)
+
+get_regression_table(model_final)
+mosaic::msummary(model_final)
+vif(model_final) 
+
+```
+
+We arrive at our final model with an adjusted R square of 62.7%, i.e around 63% of the variability in weekly sales is explained by the explanatory variables incorporated in the final model. Moreover, the colinearity problem has been resolved as VIF coefficient for all variables is less than 5.
+
+## Checking for assumption of Linear Regression
+
+```{r plots}
+
+library(ggfortify)
+autoplot(model_final) +
+theme_bw()
+
+```
+
+> **Residuals vs. Fitted:** Residuals seem no to follow any patterns
+>
+> **Normal Q-Q:** Apart from the two ends of the line residuals seem no to deviate from straight line
+>
+> **Scale-Location:** The clear trend is not recognizable.
+>
+> **Residuals vs. Leverage:** There are some outliers that could lead to biased estimated of the model.
+>
+> In conclusion, given more time, more analytics should be done in order to assess whether the model meets the assumptions of the linear regression.
+
+## Comparing all models
+
+```{r}
+huxreg(model1, model2, 
+       model3, model_final,
+       statistics = c('#observations' = 'nobs', 
+                      'R squared' = 'r.squared', 
+                      'Adj. R Squared' = 'adj.r.squared', 
+                      'Residual SE' = 'sigma'), 
+       bold_signif = 0.05, 
+       stars = NULL
+) %>% 
+  set_caption('Comparison of models')
+```
+
+INFERENECE 1
+
+> On average, change in one unit of temperature is associated with an increase of weekly sales by \$72.9. Whereas, the change in fuel price by \$1 is associated with decrease in weekly sales of \$665.
+
+INFERENCE 2
+
+> Based on estimated statistics, the impact of both Labor Day and Super Bowl weeks is not different from zero. Therefore, there is no significant difference in weekly sales during those weeks and non-holiday weeks. Probably, our retailer is not selling product widely purchased during Super Bowl and Labor Day.
+

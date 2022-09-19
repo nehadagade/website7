@@ -1,0 +1,217 @@
+---
+title: "Youth Risk Behavior Surveillance"
+date: "`r Sys.Date()`"
+description: " "
+draft: no
+image: high school health.jpeg
+keywords: ''
+slug: youth
+categories:
+- ''
+- ''
+---
+
+```{r, setup, echo=FALSE}
+knitr::opts_chunk$set(
+  message = FALSE, 
+  warning = FALSE, 
+  tidy=FALSE,     # display code as typed
+  size="small")   # slightly smaller font for code
+options(digits = 3)
+
+# default figure size
+knitr::opts_chunk$set(
+  fig.width=6.75, 
+  fig.height=6.75,
+  fig.align = "center"
+)
+```
+
+```{r load-libraries, echo=FALSE}
+library(tidyverse)  # Load ggplot2, dplyr, and all the other tidyverse packages
+library(mosaic)
+library(ggthemes)
+library(GGally)
+library(readxl)
+library(here)
+library(skimr)
+library(janitor)
+library(broom)
+library(tidyquant)
+library(infer)
+library(openintro)
+library(dplyr)
+```
+
+# Youth Risk Behavior Surveillance
+
+Every two years, the Centers for Disease Control and Prevention conduct the [Youth Risk Behavior Surveillance System (YRBSS)](https://www.cdc.gov/healthyyouth/data/yrbs/index.htm) survey, where it takes data from high schoolers (9th through 12th grade), to analyze health patterns.
+
+## Load the data
+
+```{r}
+data(yrbss)
+glimpse(yrbss)
+```
+
+## Exploratory Data Analysis on Weight
+
+```{r, eda_on_weight}
+
+skim(yrbss) #count number of NAs in weight - 1004; summary statistics
+
+yrbss %>%
+  ggplot(aes(x = weight)) +
+    geom_density() +
+    theme_bw() +
+    labs(title = "Distribution of Youth Weight",
+         x = "Weight", 
+         y = "Density")
+
+# Youth weight looks relatively right-skewed, meaning that more youth are to the left of the weight distribution.
+```
+
+## Relationship between weight and physical activity level
+
+```{r, mutate_and_count}
+# Create indicator for activity level
+yrbss <- yrbss %>%
+  mutate(physical_3plus = ifelse(physically_active_7d >= 3, "yes", "no"))
+
+#Count number of individuals active versus not active using count
+count <- yrbss %>%
+  count(physical_3plus) %>%
+  mutate(percentage = n/sum(n) * 100)
+
+count
+
+#Count number of individuals active versus not active using group_by & summarise
+group_by <- yrbss %>%
+  group_by(physical_3plus) %>%
+  summarise(count = n()) %>%
+  mutate(percentage = count/sum(count) * 100)
+
+group_by
+
+# There are almost half of individuals as active individuals who are less active. There is also NAs in level of activity in this dataset.
+```
+
+### 95% confidence interval - proportion of youth who are not active
+
+```{r, CI}
+prop.test(x = 4404, # number of high schoolers who exercise fewer than 3 days a week
+          n = 13583, # number of total trials
+          p = 0.5, #null hypothesis being that the proportion of population of activity levels equal 
+          alternative = "two.sided", # two-tailed alternative hypothesis
+          conf.level = 0.95, # 95% confidence internal assuming normal distribution
+          correct = F)
+
+# Confidence interval = (0.316, 0.332)
+
+```
+
+## Compare subgroup relationships between activity level and weight
+
+```{r, boxplot}
+yrbss %>%
+  filter(!is.na(physical_3plus)) %>%
+  ggplot(aes(x = physical_3plus, y = weight)) +
+  geom_boxplot() +
+  labs(title = "Boxplot of weights for different activity levels",
+       x = "Activity level",
+       y = "Weight") +
+  NULL
+
+# Graphically, the medians of these two variables don't look too different and the IQR either, implying that, weights do not differ depending on activity level. However, there are many outliers in both active and non-active groups. 
+```
+
+### Confidence Intervals - 1-sample by level of activity
+
+```{r, ci_using_formulas}
+#Calculate summary statistics
+ci_using_formulas <- yrbss %>%
+  select(weight, physical_3plus) %>%
+  filter(!is.na(physical_3plus)) %>%
+  group_by(physical_3plus) %>%
+  summarise(mean = mean(weight, na.rm = TRUE),
+            sd = sd(weight, na.rm = TRUE),
+            count = n(),
+            se = sd / sqrt(count),
+            t = qt(0.975, count-1),
+            margin = t*se,
+            l_ci = mean - margin,
+            h_ci = mean + margin)
+
+ ci_using_formulas 
+ 
+# Confidence interval for not active: (66.2, 67.2)
+# Confidence interval for active: (68.1, 68.8)
+
+# The confidence intervals do not overlap, and the difference should be at least 95% statistically significant.
+```
+
+### Difference in mean hypothesis test with formula & `infer`
+
+Null hypothesis: mean weights are the same for those who exercise at least 3 times a week, and those who don't Alternative hypothesis: mean weights are different for those who exercise at least 3 times a week, and those who don't
+
+Test using formula:
+
+```{r, t_test_using_R}
+t.test(weight ~ physical_3plus,
+       alternative = "two.sided",
+       conf.level = 0.95,
+       data = yrbss)
+
+# p-value very small, hence very statistically significant. We reject the null hypothesis and that there is evidence to show that there is difference in mean between those who exercise at least 3 times a week, and those who don't.
+```
+
+Testing using infer:
+
+Initialise the test by calculating the means in this sample.
+
+```{r, calc_obs_difference}
+obs_diff <- yrbss %>%
+  filter(!is.na(physical_3plus)) %>% # filter so that there are no NAs
+  specify(weight ~ physical_3plus) %>%
+  calculate(stat = "diff in means", order = c("yes", "no"))
+
+obs_diff #1.77 difference in means in this sample
+```
+
+Simulate the null hypothesis using `infer`
+
+```{r, hypothesis_testing_using_infer_package}
+
+set.seed(1234)
+
+null_dist <- yrbss %>%
+  filter(!is.na(physical_3plus)) %>%
+  # specify variables
+  specify(weight ~ physical_3plus) %>%
+  
+  # assume independence, i.e, there is no difference
+  hypothesize(null = "independence") %>%
+  
+  # generate 1000 reps, of type "permute"
+  generate(reps = 1000, type = "permute") %>%
+  
+  # calculate statistic of difference, namely "diff in means"
+  calculate(stat = "diff in means", order = c("yes", "no"))
+
+```
+
+Visualise and plot hypothesis testing:
+
+```{r, visualise_and_plot}
+ggplot(data = null_dist, aes(x = stat)) +
+  geom_histogram()  
+
+null_dist %>% visualize() +
+  shade_p_value(obs_stat = obs_diff, direction = "two-sided")
+
+null_dist %>%
+  get_p_value(obs_stat = obs_diff, direction = "two_sided")
+
+```
+
+# 

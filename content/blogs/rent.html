@@ -1,0 +1,470 @@
+---
+title: "Analysis of Rent in Bay Area"
+date: "2022-09-19"
+description: " "
+draft: no
+image: sanfran.jpeg
+keywords: ''
+slug: rent
+categories:
+- ''
+- ''
+---
+
+
+
+<div id="rents-in-san-francsisco-2000-2018" class="section level1">
+<h1>Rents in San Francsisco 2000-2018</h1>
+<p>Data dictionary:</p>
+<table>
+<thead>
+<tr class="header">
+<th>variable</th>
+<th>class</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>post_id</td>
+<td>character</td>
+<td>Unique ID</td>
+</tr>
+<tr class="even">
+<td>date</td>
+<td>double</td>
+<td>date</td>
+</tr>
+<tr class="odd">
+<td>year</td>
+<td>double</td>
+<td>year</td>
+</tr>
+<tr class="even">
+<td>nhood</td>
+<td>character</td>
+<td>neighborhood</td>
+</tr>
+<tr class="odd">
+<td>city</td>
+<td>character</td>
+<td>city</td>
+</tr>
+<tr class="even">
+<td>county</td>
+<td>character</td>
+<td>county</td>
+</tr>
+<tr class="odd">
+<td>price</td>
+<td>double</td>
+<td>price in USD</td>
+</tr>
+<tr class="even">
+<td>beds</td>
+<td>double</td>
+<td>n of beds</td>
+</tr>
+<tr class="odd">
+<td>baths</td>
+<td>double</td>
+<td>n of baths</td>
+</tr>
+<tr class="even">
+<td>sqft</td>
+<td>double</td>
+<td>square feet of rental</td>
+</tr>
+<tr class="odd">
+<td>room_in_apt</td>
+<td>double</td>
+<td>room in apartment</td>
+</tr>
+<tr class="even">
+<td>address</td>
+<td>character</td>
+<td>address</td>
+</tr>
+<tr class="odd">
+<td>lat</td>
+<td>double</td>
+<td>latitude</td>
+</tr>
+<tr class="even">
+<td>lon</td>
+<td>double</td>
+<td>longitude</td>
+</tr>
+<tr class="odd">
+<td>title</td>
+<td>character</td>
+<td>title of listing</td>
+</tr>
+<tr class="even">
+<td>descr</td>
+<td>character</td>
+<td>description</td>
+</tr>
+<tr class="odd">
+<td>details</td>
+<td>character</td>
+<td>additional details</td>
+</tr>
+</tbody>
+</table>
+<p>The dataset was used in a recent <a href="https://github.com/rfordatascience/tidytuesday">tidyTuesday</a> project.</p>
+<pre class="r"><code># download directly off tidytuesdaygithub repo
+
+rent &lt;- readr::read_csv(&#39;https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-07-05/rent.csv&#39;)</code></pre>
+<pre class="r"><code>skimr::skim(rent)</code></pre>
+<table>
+<caption>(#tab:skim_data)Data summary</caption>
+<tbody>
+<tr class="odd">
+<td align="left">Name</td>
+<td align="left">rent</td>
+</tr>
+<tr class="even">
+<td align="left">Number of rows</td>
+<td align="left">200796</td>
+</tr>
+<tr class="odd">
+<td align="left">Number of columns</td>
+<td align="left">17</td>
+</tr>
+<tr class="even">
+<td align="left">_______________________</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left">Column type frequency:</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">character</td>
+<td align="left">8</td>
+</tr>
+<tr class="odd">
+<td align="left">numeric</td>
+<td align="left">9</td>
+</tr>
+<tr class="even">
+<td align="left">________________________</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left">Group variables</td>
+<td align="left">None</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Variable type: character</strong></p>
+<table>
+<colgroup>
+<col width="18%" />
+<col width="13%" />
+<col width="18%" />
+<col width="5%" />
+<col width="8%" />
+<col width="8%" />
+<col width="12%" />
+<col width="14%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">skim_variable</th>
+<th align="right">n_missing</th>
+<th align="right">complete_rate</th>
+<th align="right">min</th>
+<th align="right">max</th>
+<th align="right">empty</th>
+<th align="right">n_unique</th>
+<th align="right">whitespace</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">post_id</td>
+<td align="right">0</td>
+<td align="right">1.00</td>
+<td align="right">9</td>
+<td align="right">14</td>
+<td align="right">0</td>
+<td align="right">200796</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">nhood</td>
+<td align="right">0</td>
+<td align="right">1.00</td>
+<td align="right">4</td>
+<td align="right">43</td>
+<td align="right">0</td>
+<td align="right">167</td>
+<td align="right">0</td>
+</tr>
+<tr class="odd">
+<td align="left">city</td>
+<td align="right">0</td>
+<td align="right">1.00</td>
+<td align="right">5</td>
+<td align="right">19</td>
+<td align="right">0</td>
+<td align="right">104</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">county</td>
+<td align="right">1394</td>
+<td align="right">0.99</td>
+<td align="right">4</td>
+<td align="right">13</td>
+<td align="right">0</td>
+<td align="right">10</td>
+<td align="right">0</td>
+</tr>
+<tr class="odd">
+<td align="left">address</td>
+<td align="right">196888</td>
+<td align="right">0.02</td>
+<td align="right">1</td>
+<td align="right">38</td>
+<td align="right">0</td>
+<td align="right">2869</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">title</td>
+<td align="right">2517</td>
+<td align="right">0.99</td>
+<td align="right">2</td>
+<td align="right">298</td>
+<td align="right">0</td>
+<td align="right">184961</td>
+<td align="right">0</td>
+</tr>
+<tr class="odd">
+<td align="left">descr</td>
+<td align="right">197542</td>
+<td align="right">0.02</td>
+<td align="right">13</td>
+<td align="right">16975</td>
+<td align="right">0</td>
+<td align="right">3025</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">details</td>
+<td align="right">192780</td>
+<td align="right">0.04</td>
+<td align="right">4</td>
+<td align="right">595</td>
+<td align="right">0</td>
+<td align="right">7667</td>
+<td align="right">0</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Variable type: numeric</strong></p>
+<table>
+<colgroup>
+<col width="12%" />
+<col width="8%" />
+<col width="12%" />
+<col width="8%" />
+<col width="7%" />
+<col width="8%" />
+<col width="8%" />
+<col width="8%" />
+<col width="8%" />
+<col width="8%" />
+<col width="5%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">skim_variable</th>
+<th align="right">n_missing</th>
+<th align="right">complete_rate</th>
+<th align="right">mean</th>
+<th align="right">sd</th>
+<th align="right">p0</th>
+<th align="right">p25</th>
+<th align="right">p50</th>
+<th align="right">p75</th>
+<th align="right">p100</th>
+<th align="left">hist</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">date</td>
+<td align="right">0</td>
+<td align="right">1.00</td>
+<td align="right">2.01e+07</td>
+<td align="right">44694.07</td>
+<td align="right">2.00e+07</td>
+<td align="right">2.01e+07</td>
+<td align="right">2.01e+07</td>
+<td align="right">2.01e+07</td>
+<td align="right">2.02e+07</td>
+<td align="left">▁▇▁▆▃</td>
+</tr>
+<tr class="even">
+<td align="left">year</td>
+<td align="right">0</td>
+<td align="right">1.00</td>
+<td align="right">2.01e+03</td>
+<td align="right">4.48</td>
+<td align="right">2.00e+03</td>
+<td align="right">2.00e+03</td>
+<td align="right">2.01e+03</td>
+<td align="right">2.01e+03</td>
+<td align="right">2.02e+03</td>
+<td align="left">▁▇▁▆▃</td>
+</tr>
+<tr class="odd">
+<td align="left">price</td>
+<td align="right">0</td>
+<td align="right">1.00</td>
+<td align="right">2.14e+03</td>
+<td align="right">1427.75</td>
+<td align="right">2.20e+02</td>
+<td align="right">1.30e+03</td>
+<td align="right">1.80e+03</td>
+<td align="right">2.50e+03</td>
+<td align="right">4.00e+04</td>
+<td align="left">▇▁▁▁▁</td>
+</tr>
+<tr class="even">
+<td align="left">beds</td>
+<td align="right">6608</td>
+<td align="right">0.97</td>
+<td align="right">1.89e+00</td>
+<td align="right">1.08</td>
+<td align="right">0.00e+00</td>
+<td align="right">1.00e+00</td>
+<td align="right">2.00e+00</td>
+<td align="right">3.00e+00</td>
+<td align="right">1.20e+01</td>
+<td align="left">▇▂▁▁▁</td>
+</tr>
+<tr class="odd">
+<td align="left">baths</td>
+<td align="right">158121</td>
+<td align="right">0.21</td>
+<td align="right">1.68e+00</td>
+<td align="right">0.69</td>
+<td align="right">1.00e+00</td>
+<td align="right">1.00e+00</td>
+<td align="right">2.00e+00</td>
+<td align="right">2.00e+00</td>
+<td align="right">8.00e+00</td>
+<td align="left">▇▁▁▁▁</td>
+</tr>
+<tr class="even">
+<td align="left">sqft</td>
+<td align="right">136117</td>
+<td align="right">0.32</td>
+<td align="right">1.20e+03</td>
+<td align="right">5000.22</td>
+<td align="right">8.00e+01</td>
+<td align="right">7.50e+02</td>
+<td align="right">1.00e+03</td>
+<td align="right">1.36e+03</td>
+<td align="right">9.00e+05</td>
+<td align="left">▇▁▁▁▁</td>
+</tr>
+<tr class="odd">
+<td align="left">room_in_apt</td>
+<td align="right">0</td>
+<td align="right">1.00</td>
+<td align="right">0.00e+00</td>
+<td align="right">0.04</td>
+<td align="right">0.00e+00</td>
+<td align="right">0.00e+00</td>
+<td align="right">0.00e+00</td>
+<td align="right">0.00e+00</td>
+<td align="right">1.00e+00</td>
+<td align="left">▇▁▁▁▁</td>
+</tr>
+<tr class="even">
+<td align="left">lat</td>
+<td align="right">193145</td>
+<td align="right">0.04</td>
+<td align="right">3.77e+01</td>
+<td align="right">0.35</td>
+<td align="right">3.36e+01</td>
+<td align="right">3.74e+01</td>
+<td align="right">3.78e+01</td>
+<td align="right">3.78e+01</td>
+<td align="right">4.04e+01</td>
+<td align="left">▁▁▅▇▁</td>
+</tr>
+<tr class="odd">
+<td align="left">lon</td>
+<td align="right">196484</td>
+<td align="right">0.02</td>
+<td align="right">-1.22e+02</td>
+<td align="right">0.78</td>
+<td align="right">-1.23e+02</td>
+<td align="right">-1.22e+02</td>
+<td align="right">-1.22e+02</td>
+<td align="right">-1.22e+02</td>
+<td align="right">-7.42e+01</td>
+<td align="left">▇▁▁▁▁</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>#The variable types are primarily of numeric and character data type. The character variable &#39;descr&#39; has the most missing values (197542 observations being NA) followed by the variables &#39;address&#39;, &#39;lon&#39;,&#39;lat&#39;,and &#39;details&#39;. All categorical variables are of character type and  numeric variables (except date and year) correspond to numeric data type.</code></pre>
+<p>Plot of the top 20 cities in terms of % of classifieds between 2000-2018.</p>
+<pre class="r"><code># Filter original dataset and produce new dataset containing classifieds
+top_cities &lt;- rent %&gt;%
+  filter(year %in% c(2000:2018)) %&gt;%
+  count(city) %&gt;%
+  mutate(city_listing = n) %&gt;%
+  mutate(classifieds = city_listing / sum(city_listing) * 100)
+
+# Plotting bar chart using top_cities dataset
+top_cities %&gt;%
+  slice_max(order_by = classifieds, n = 20) %&gt;%
+  ggplot(aes(x = classifieds, y = fct_reorder(city, classifieds))) +
+  geom_col() +
+  theme_minimal()+
+  labs( title=&quot;San Francisco accounts for more than a quarter of all rental classfields&quot;,subtitle=&quot;% of Craiglist listings, 2000-2018&quot;,x = NULL,y=NULL,caption = &quot;Source:Pennington, Kate (2018). Bay Area Craigslist Rental Housing Posts, 2000-2018&quot; )</code></pre>
+<p><img src="/blogs/rent_files/figure-html/top_cities-1.png" width="648" style="display: block; margin: auto;" /></p>
+<p>Plot of the evolution of median prices in San Francisco for 0, 1, 2, and 3 bedrooms listings. The final graph should look like this</p>
+<pre class="r"><code># Filter dataset, produce median prices, and plot line graph facetted by number of beds
+ sf_median_prices&lt;-rent %&gt;%
+  filter(city==&quot;san francisco&quot; &amp; beds %in% c(0:3)) %&gt;%
+  group_by(beds,year) %&gt;%
+  summarize(med = median(price))%&gt;%
+   ggplot(aes(x=year,y=med,color=factor(beds))) + geom_line() +
+  facet_grid(~beds)+
+  labs( title=&quot;San Francisco rents have been steadily increasing&quot;,subtitle=&quot;0 to 3-bed listings,2000-2018&quot;,x = NULL,y=NULL,caption = &quot;Source:Pennington, Kate (2018). Bay Area Craigslist Rental Housing Posts, 2000-2018&quot; )+
+   theme_bw()+
+   theme(legend.position=&quot;none&quot;)
+
+ # Display graph
+ sf_median_prices</code></pre>
+<p><img src="/blogs/rent_files/figure-html/sf_median_prices-1.png" width="648" style="display: block; margin: auto;" /></p>
+<p>Plot of median rental prices for the top 12 cities in the Bay area.</p>
+<pre class="r"><code># Filter original dataset, find median prices of selected cities, and plot
+spirit_plot&lt;-rent %&gt;%
+  filter(city %in% c(&quot;san francisco&quot;,&quot;oakland&quot;,&quot;san jose&quot;,&quot;berkeley&quot;,&quot;santa cruz&quot;,&quot;santa rosa&quot;,&quot;mountain view&quot;,&quot;san mateo&quot;,&quot;palo alto&quot;,&quot;santa clara&quot;,&quot;union city&quot;,&quot;sunnyvale&quot;) &amp; beds==1) %&gt;%
+  group_by(city,year) %&gt;%
+  summarize(med = median(price))%&gt;%
+  ggplot(aes(x=year,y=med, color = factor(city))) +
+  geom_line() +
+  facet_wrap(~city)+
+  labs( title=&quot;Rental prices for 1-bedroom flats in the Bay Area&quot;,x = NULL,y=NULL,caption = &quot;Source:Pennington, Kate (2018). Bay Area Craigslist Rental Housing Posts, 2000-2018&quot; )+
+  theme_bw()+
+  theme(legend.position=&quot;none&quot;)
+
+# Display plot
+spirit_plot</code></pre>
+<p><img src="/blogs/rent_files/figure-html/spirit_plot-1.png" width="648" style="display: block; margin: auto;" /></p>
+<blockquote>
+<p>San Francisco is the city that has the highest percentages of rental listings between the years 2000 and 2018, falling just under 30% of total listings. Average prices of all common types of listings (between 0 and 3 bedrooms) took a hit during and after the financial crisis in 2008, and saw prices surge to more than double its pre-pandemic high in 2018, despite it levelling off post-2015. Many cities in the same Bay area saw a similar surge of rental prices for a 1-bedroom apartment, mainly for job-seekers.</p>
+<p>The surge in rental prices may be caused by high housing prices in San Francisco. Purchasing a house and renting a house act as (somewhat perfect) substitutes, diverting job-seekers’ demand for houses towards rental houses. Seeing an opportunity, house-owners may be more willing to supply their houses in the rental market, hence seeing an increase in supply of rental houses. 2 and more bedroom rentals also saw prices rising, which may indicate not only job-seekers, but also families are priced out of purchasing a house, but supply has fallen far behind to soak up the increase in demand.</p>
+</blockquote>
+</div>

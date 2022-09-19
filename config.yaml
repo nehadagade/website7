@@ -93,19 +93,19 @@ params:
         title: My CV
         url: blogs/NehaDagade_CV.html
       - image: high school health.jpeg
-        #subtitle: Lorem Etiam Nullam
+        subtitle: Anlyzing health patterns amongst high schoolers
         title: Youth Risk Behavior Surveillance
         url: blogs/youth
       - image: climate change.jpeg
-        #subtitle: Nisl Sed Aliquam
+        subtitle: Data visualisation and interval estimation of temperature anomalies
         title: Climate change and temperature anomalies
         url: blogs/climate
       - image: sanfran.jpeg
-        #subtitle: Ipsum Dolor Sit Amet
+        subtitle: An analysis of the surge in rental prices in San Francisco
         title: Rents in San Francisco
         url: blogs/rent
       - image: retail sales.jpeg
-        #subtitle: Feugiat Amet Tempus
+        subtitle: EDA, inferential stats and regression of weekly sales by department for stores of a US Retailer  
         title: Analysis of weekly sales of Retailer
         url: blogs/retailer
   two:

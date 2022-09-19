@@ -6,12 +6,12 @@ googleAnalytics: ''
 disqusShortname: ''
 params:
   banner:
-    buttonText: Get Started
+    buttonText: Get to know me!
     # subtitle: |-
     #   A RESPONSIVE SITE TEMPLATE DESIGNED BY HTML5 UP
     #   AND RELEASED UNDER THE CREATIVE COMMONS.
-    title: Hi, my name is Neha
-  blog: {}
+    title: Hi, I'm Neha!
+  blog: {I'm currently building a whole new life in a whole new city whilst pursuing my Masters in Analytics and Management at London Business School}
   contact:
     address:
       - city: London, W1H 1FF
@@ -76,16 +76,16 @@ params:
       - name: Elements
         url: elements.html
     menu: Menu
-    subtitle: By HTML5 Up
-    title: Forty
+    #subtitle: By HTML5 Up
+    title: Neha's Portfolio Website
   tiles:
     enable: yes
     showcase:
-      - image: pic01.jpg
-        subtitle: Learn more about me
+      - image: About me.jpg
+        subtitle: Who am I?
         title: About Me
         url: blogs/aliquam
-      - image: pic02.jpg
+      - image: My CV.jpg
         subtitle: Learn more about more career profile and aspirations
         title: My CV
         url: blogs/tempus

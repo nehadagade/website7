@@ -91,7 +91,7 @@ params:
       - image: My CV.jpg
         subtitle: Learn more about more career profile and aspirations
         title: My CV
-        url: blogs/NehaDagade_CV.html
+        url: blogs/NehaDagade_CV.pdf
       - image: high school health.jpeg
         subtitle: Anlyzing health patterns amongst high schoolers
         title: Youth Risk Behavior Surveillance
